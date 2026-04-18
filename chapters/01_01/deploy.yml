@@ -1,0 +1,138 @@
+name: Deploy Infrastructure
+
+# Workflow Triggers
+# This workflow can be triggered in two ways:
+# 1. Automatically on push to the main branch (continuous deployment)
+# 2. Manually via the GitHub Actions UI (workflow_dispatch)
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Permissions Configuration
+permissions:
+  contents: read   # Required for repository checkout - allows reading repository files
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # ========================================================================
+      # Step 1: Configure AWS Credentials using Access Keys
+      # ========================================================================
+      # This step uses AWS access keys stored in GitHub Secrets
+      # 
+      # How it works:
+      # 1. AWS access keys (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are stored
+      #    as encrypted secrets in your GitHub repository settings
+      # 2. The action retrieves these secrets and sets them as environment variables
+      # 3. The AWS CLI and SDKs automatically use these credentials
+      #
+      # Prerequisites:
+      # - Create an IAM user in AWS with appropriate permissions
+      # - Generate access keys for the IAM user
+      # - Add the following secrets to your GitHub repository:
+      #   - AWS_ACCESS_KEY_ID: Your AWS access key ID
+      #   - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
+      #
+      # To add secrets:
+      # 1. Go to your GitHub repository
+      # 2. Navigate to Settings > Secrets and variables > Actions
+      # 3. Click "New repository secret"
+      # 4. Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+      #
+      # Security considerations:
+      # - Access keys are long-lived credentials that don't expire automatically
+      # - Rotate keys regularly for better security
+      # - Use least-privilege IAM policies
+      # - Consider using OIDC for better security (no long-lived credentials)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # ========================================================================
+      # Step 2: Checkout Repository
+      # ========================================================================
+      # Downloads the repository code to the GitHub Actions runner
+      # This gives us access to the Terraform configuration files in the terraform/ directory
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ========================================================================
+      # Step 3: Setup Terraform
+      # ========================================================================
+      # Installs the Terraform CLI on the GitHub Actions runner
+      # This action downloads and caches the Terraform binary
+      # The terraform command will be available in subsequent steps
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ========================================================================
+      # Step 4: Terraform Init
+      # ========================================================================
+      # Initializes the Terraform working directory
+      # This step:
+      # - Downloads the AWS provider plugin specified in provider.tf
+      # - Prepares the backend for state management (local by default)
+      # - Creates a .terraform directory with provider binaries
+      #
+      # If this step fails, common causes include:
+      # - Invalid provider configuration
+      # - Network issues downloading providers
+      # - Insufficient AWS permissions
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      # ========================================================================
+      # Step 5: Terraform Plan
+      # ========================================================================
+      # Generates an execution plan showing what Terraform will do
+      # This step:
+      # - Compares desired state (configuration) with actual state (AWS resources)
+      # - Shows which resources will be created, modified, or destroyed
+      # - Does NOT make any actual changes to infrastructure
+      #
+      # Review the plan output carefully to verify expected changes
+      # Look for the summary line: "Plan: X to add, Y to change, Z to destroy"
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+
+      # ========================================================================
+      # Step 6: Terraform Apply
+      # ========================================================================
+      # Applies the Terraform configuration to create or update AWS resources
+      # This step:
+      # - Executes the changes shown in the plan
+      # - Creates VPC, subnet, security group, and EC2 instance
+      # - Updates Terraform state file with resource information
+      #
+      # The -auto-approve flag skips the interactive confirmation prompt
+      # This is necessary for automated workflows but removes a safety check
+      #
+      # Production considerations:
+      # - Consider using Terraform Cloud for state management and approvals
+      # - Implement manual approval gates for production deployments
+      # - Use separate workflows for plan (on PR) and apply (on merge)
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      # ========================================================================
+      # Step 7: Output Web Server URL
+      # ========================================================================
+      # Extracts and displays the web server URL from Terraform outputs
+      # This makes it easy to access the deployed web server
+      # The URL will appear in the GitHub Actions workflow logs
+      #
+      # The 'terraform output -raw' command retrieves output values without quotes
+      # You can click the URL in the logs to verify the deployment
+      - name: Output Web Server URL
+        working-directory: terraform
+        run: |
+          echo "Web Server URL: $(terraform output -raw web_server_url)"
+          echo "Access your web server at the URL above"

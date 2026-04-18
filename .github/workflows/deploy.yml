@@ -1,0 +1,118 @@
+name: Deploy Infrastructure
+
+# Workflow Triggers
+# This workflow can be triggered in two ways:
+# 1. Automatically on push to the main branch (continuous deployment)
+# 2. Manually via the GitHub Actions UI (workflow_dispatch)
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Permissions Configuration
+# These permissions are critical for OIDC authentication to work
+# GitHub Actions will generate an OIDC token with these permissions
+permissions:
+  id-token: write  # Required for OIDC token generation - allows requesting JWT tokens from GitHub
+  contents: read   # Required for repository checkout - allows reading repository files
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # ========================================================================
+      # Step 1: Configure AWS Credentials using OIDC
+      # ========================================================================
+      # This step uses OpenID Connect (OIDC) to authenticate with AWS
+      # Benefits of OIDC over traditional access keys:
+      # - No long-lived credentials stored in GitHub secrets
+      # - Temporary credentials that expire automatically
+      # - Better security posture and compliance
+      # - Credentials are scoped to this specific workflow execution
+      #
+      # How it works:
+      # 1. GitHub Actions generates an OIDC token (JWT) containing workflow metadata
+      # 2. The token is sent to AWS STS (Security Token Service)
+      # 3. AWS validates the token against the OIDC provider configuration
+      # 4. If valid, AWS issues temporary credentials (access key, secret, session token)
+      # 5. These credentials are automatically set as environment variables
+      #
+      # Prerequisites:
+      # - AWS OIDC provider must be configured in your AWS account
+      # - IAM role must exist with trust policy allowing GitHub Actions
+      # - Replace ACCOUNT_ID with your AWS account ID
+      # - Replace role name if you used a different name
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # ========================================================================
+      # Step 2: Checkout Repository
+      # ========================================================================
+      # Downloads the repository code to the GitHub Actions runner
+      # This gives us access to the Terraform configuration files in the terraform/ directory
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ========================================================================
+      # Step 3: Setup Terraform
+      # ========================================================================
+      # Installs the Terraform CLI on the GitHub Actions runner
+      # This action downloads and caches the Terraform binary
+      # The terraform command will be available in subsequent steps
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ========================================================================
+      # Step 4: Terraform Init
+      # ========================================================================
+      # Initializes the Terraform working directory
+      # This step:
+      # - Downloads the AWS provider plugin specified in provider.tf
+      # - Prepares the backend for state management (local by default)
+      # - Creates a .terraform directory with provider binaries
+      #
+      # If this step fails, common causes include:
+      # - Invalid provider configuration
+      # - Network issues downloading providers
+      # - Insufficient AWS permissions
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      # ========================================================================
+      # Step 5: Terraform Apply
+      # ========================================================================
+      # Applies the Terraform configuration to create or update AWS resources
+      # This step:
+      # - Executes the changes shown in the plan
+      # - Creates VPC, subnet, security group, and EC2 instance
+      # - Updates Terraform state file with resource information
+      #
+      # The -auto-approve flag skips the interactive confirmation prompt
+      # This is necessary for automated workflows but removes a safety check
+      #
+      # Production considerations:
+      # - Consider using Terraform Cloud for state management and approvals
+      # - Implement manual approval gates for production deployments
+      # - Use separate workflows for plan (on PR) and apply (on merge)
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      # ========================================================================
+      # Step 6: Output Web Server URL
+      # ========================================================================
+      # Extracts and displays the web server URL from Terraform outputs
+      # This makes it easy to access the deployed web server
+      # The URL will appear in the GitHub Actions workflow logs
+      #
+      # The 'terraform output -raw' command retrieves output values without quotes
+      # You can click the URL in the logs to verify the deployment
+      - name: Output Web Server URL
+        working-directory: terraform
+        run: |
+          echo "Web Server URL: $(terraform output -raw web_server_url)"
+          echo "Access your web server at the URL above"

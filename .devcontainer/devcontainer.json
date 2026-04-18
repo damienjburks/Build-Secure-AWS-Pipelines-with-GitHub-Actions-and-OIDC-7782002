@@ -1,0 +1,10 @@
+{
+  "name": "Terraform Environment",
+  "features": {
+    "ghcr.io/devcontainers/features/terraform:latest": {
+      "version": "latest",
+      "tflint": "latest",
+      "terragrunt": "latest"
+    }
+  }
+}

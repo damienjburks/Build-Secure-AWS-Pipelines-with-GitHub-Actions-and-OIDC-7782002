@@ -1,0 +1,143 @@
+{
+    "Statement": [
+        {
+            "Action": [
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:ListBucket",
+                "s3:GetBucketRequestPayment",
+                "s3:GetBucketLocation",
+                "s3:GetBucketPublicAccessBlock",
+                "s3:GetBucketLifecycleConfiguration",
+                "s3:GetLifecycleConfiguration",
+                "s3:GetBucketReplication",
+                "s3:GetReplicationConfiguration",
+                "s3:GetEncryptionConfiguration",
+                "s3:GetBucketObjectLockConfiguration",
+                "s3:GetObjectTagging",
+                "s3:PutBucketAcl",
+                "s3:GetBucketAcl",
+                "s3:PutBucketPolicy",
+                "s3:GetBucketPolicy",
+                "s3:GetBucketCORS",
+                "s3:GetAccelerateConfiguration",
+                "s3:DeleteBucketPolicy",
+                "s3:PutBucketPublicAccessBlock",
+                "s3:DeletePublicAccessBlock",
+                "s3:PutBucketLogging",
+                "s3:GetBucketLogging",
+                "s3:PutBucketVersioning",
+                "s3:GetBucketVersioning",
+                "s3:PutBucketTagging",
+                "s3:GetBucketTagging",
+                "s3:DeleteBucketTagging",
+                "s3:PutBucketWebsite",
+                "s3:GetBucketWebsite",
+                "s3:DeleteBucketWebsite",
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:ListBucketMultipartUploads",
+                "s3:AbortMultipartUpload"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::*",
+                "arn:aws:s3:::*/*"
+            ],
+            "Sid": "S3BucketManagement"
+        },
+        {
+            "Action": [
+                "ec2:RunInstances",
+                "ec2:TerminateInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:RebootInstances",
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceTypes",
+                "ec2:DescribeTags",
+                "ec2:DescribeVolumes",
+                "ec2:DescribeInstanceCreditSpecifications",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "us-east-1"
+                }
+            },
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "EC2InstanceManagement"
+        },
+        {
+            "Action": [
+                "ec2:CreateVpc",
+                "ec2:DeleteVpc",
+                "ec2:DescribeVpcs",
+                "ec2:ModifyVpcAttribute",
+                "ec2:DescribeVpcAttribute",
+                "ec2:CreateSubnet",
+                "ec2:DeleteSubnet",
+                "ec2:DescribeSubnets",
+                "ec2:ModifySubnetAttribute",
+                "ec2:CreateInternetGateway",
+                "ec2:DeleteInternetGateway",
+                "ec2:AttachInternetGateway",
+                "ec2:DetachInternetGateway",
+                "ec2:DescribeInternetGateways",
+                "ec2:CreateRouteTable",
+                "ec2:DeleteRouteTable",
+                "ec2:DescribeRouteTables",
+                "ec2:CreateRoute",
+                "ec2:DeleteRoute",
+                "ec2:AssociateRouteTable",
+                "ec2:DisassociateRouteTable"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "us-east-1"
+                }
+            },
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "VPCManagement"
+        },
+        {
+            "Action": [
+                "ec2:CreateSecurityGroup",
+                "ec2:DeleteSecurityGroup",
+                "ec2:DescribeSecurityGroups",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:RevokeSecurityGroupIngress",
+                "ec2:RevokeSecurityGroupEgress",
+                "ec2:ModifySecurityGroupRules"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "us-east-1"
+                }
+            },
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "SecurityGroupManagement"
+        },
+        {
+            "Action": [
+                "ec2:DescribeAvailabilityZones",
+                "ec2:DescribeImages",
+                "ec2:DescribeAccountAttributes",
+                "ec2:DescribeNetworkInterfaces"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "ReadOnlyDataSources"
+        }
+    ],
+    "Version": "2012-10-17"
+}
