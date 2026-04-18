@@ -12,7 +12,6 @@
     "vscode": {
       "extensions": [
         "HashiCorp.terraform",
-        "GitHub.vscode-github-actions",
         "redhat.vscode-yaml",
         "ms-vscode-remote.remote-containers",
         "linkedinlearning.linkedinlearning-vscode-theme"
