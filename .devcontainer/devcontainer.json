@@ -5,6 +5,17 @@
       "version": "latest",
       "tflint": "latest",
       "terragrunt": "latest"
+    },
+    "ghcr.io/devcontainers/features/aws-cli:latest": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "HashiCorp.terraform",
+        "GitHub.vscode-github-actions",
+        "redhat.vscode-yaml",
+        "ms-vscode-remote.remote-containers"
+      ]
     }
   }
 }

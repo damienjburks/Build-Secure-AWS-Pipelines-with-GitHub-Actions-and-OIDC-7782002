@@ -1,48 +1,105 @@
 # Build Secure AWS Pipelines with GitHub Actions and OIDC
+
 This is the repository for the LinkedIn Learning course `Build Secure AWS Pipelines with GitHub Actions and OIDC`. The full course is available from [LinkedIn Learning][lil-course-url].
 
 ![lil-thumbnail-url]
 
 ## Course Description
 
-_See the readme file in the main branch for updated instructions and information._
-## Instructions
-This repository has branches for each of the videos in the course. You can use the branch pop up menu in github to switch to a specific branch and take a look at the course at that stage, or you can add `/tree/BRANCH_NAME` to the URL to go to the branch you want to access.
+Learn how to build secure CI/CD pipelines using GitHub Actions and AWS OIDC (OpenID Connect) — eliminating the need for long-lived AWS access keys. The course walks through deploying a web application (Vervium UI) to AWS using Terraform, progressing from IAM user credentials to a fully OIDC-based workflow.
 
-## Branches
-The branches are structured to correspond to the videos in the course. The naming convention is `CHAPTER#_MOVIE#`. As an example, the branch named `02_03` corresponds to the second chapter and the third video in that chapter. 
-Some branches will have a beginning and an end state. These are marked with the letters `b` for "beginning" and `e` for "end". The `b` branch contains the code as it is at the beginning of the movie. The `e` branch contains the code as it is at the end of the movie. The `main` branch holds the final state of the code when in the course.
+## Prerequisites
 
-When switching from one exercise files branch to the next after making changes to the files, you may get a message like this:
+- An [AWS account](https://aws.amazon.com/free/) with admin or sufficient IAM permissions
+- A [GitHub](https://github.com) account
+- Basic familiarity with Git, Terraform, and AWS concepts
 
-    error: Your local changes to the following files would be overwritten by checkout:        [files]
-    Please commit your changes or stash them before you switch branches.
-    Aborting
+## Getting Started
 
-To resolve this issue:
-	
-    Add changes to git using this command: git add .
-	Commit changes using this command: git commit -m "some message"
+### 1. Clone the Repository
 
-## Installing
-1. To use these exercise files, you must have the following installed:
-	- [list of requirements for course]
-2. Clone this repository into your local machine using the terminal (Mac), CMD (Windows), or a GUI tool like SourceTree.
-3. [Course-specific instructions]
+```bash
+git clone https://github.com/<your-username>/build-secure-aws-pipelines-with-github-actions-and-oidc.git
+cd build-secure-aws-pipelines-with-github-actions-and-oidc
+```
+
+### 2. Development Environment
+
+This repo includes a [Dev Container](.devcontainer/devcontainer.json) configuration that automatically provisions Terraform, TFLint, and Terragrunt. You can use it with:
+
+- **GitHub Codespaces** — click "Code > Codespaces > New codespace" on the repo page.
+- **VS Code / Kiro** — install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension, then open the repo and select "Reopen in Container."
+
+If you prefer a local setup, install the following manually:
+
+| Tool | Version | Install Guide |
+|------|---------|---------------|
+| [Terraform](https://developer.hashicorp.com/terraform/install) | >= 1.0 | `brew install terraform` or [download](https://developer.hashicorp.com/terraform/install) |
+| [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) | latest | `brew install awscli` or [download](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) |
+| [Git](https://git-scm.com/) | latest | `brew install git` or [download](https://git-scm.com/downloads) |
+
+## Project Structure
+
+```
+.
+├── .devcontainer/          # Dev Container configuration
+├── .github/workflows/      # GitHub Actions CI/CD pipelines
+│   ├── deploy.yml          # Deploy infrastructure via OIDC
+│   └── destroy.yml         # Tear down infrastructure
+├── chapters/               # Per-chapter reference files
+│   ├── 01_01/deploy.yml    #   Ch1 — deploy with IAM access keys
+│   ├── 03_03/deploy.yml    #   Ch3 — deploy with OIDC
+│   └── 04_04/policy.json   #   Ch4 — least-privilege IAM policy
+├── terraform/
+│   ├── main.tf             # VPC, subnet, SG, S3, IAM, EC2 resources
+│   ├── variables.tf        # Input variables (region, instance type)
+│   ├── provider.tf         # AWS provider & Terraform version constraints
+│   ├── backend.tf          # S3 remote state backend config
+│   ├── data.tf             # Data sources (AMI, AZs, caller identity)
+│   ├── locals.tf           # Computed locals (deployment method detection)
+│   ├── outputs.tf          # Outputs (IP, URL, VPC ID, bucket name)
+│   ├── user-data.sh        # EC2 bootstrap script (Apache + S3 sync)
+│   └── vervium_ui/         # Static website files uploaded to S3
+└── README.md
+```
+
+## Infrastructure Overview
+
+The Terraform configuration provisions:
+
+- A VPC with a public subnet, internet gateway, and route table
+- A security group allowing inbound HTTP (port 80)
+- A private S3 bucket containing the Vervium UI static assets
+- An IAM role granting the EC2 instance read access to the S3 bucket
+- An EC2 instance (Amazon Linux 2023) running Apache, which syncs the UI from S3 on boot
+
+## Recommended Extensions
+
+If you're using VS Code or Kiro, the following extensions are helpful:
+
+- [HashiCorp Terraform](https://marketplace.visualstudio.com/items?itemName=HashiCorp.terraform) — syntax highlighting, IntelliSense, and formatting for `.tf` files
+- [GitHub Actions](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-github-actions) — syntax highlighting and validation for workflow YAML files
+- [YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) — general YAML language support
+- [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) — open the repo inside the provided Dev Container
+
+## Cleanup
+
+To destroy all AWS resources created by this project:
+
+```bash
+cd terraform
+terraform destroy
+```
+
+Or trigger the **Destroy Infrastructure** workflow from the GitHub Actions tab.
 
 ## Instructor
 
-Instructor name
+Damien Burks
+Sr. Cloud Security Engineer & Founder of The DevSec Blueprint
 
-Instructor description
+Check out my other courses on [LinkedIn Learning](https://www.linkedin.com/learning/instructors/damien-burks).
 
-                            
-
-Check out my other courses on [LinkedIn Learning](https://www.linkedin.com/learning/instructors/).
-
-
-[0]: # (Replace these placeholder URLs with actual course URLs)
-
+[0]: # "Replace these placeholder URLs with actual course URLs"
 [lil-course-url]: https://www.linkedin.com/learning/
 [lil-thumbnail-url]: https://media.licdn.com/dms/image/v2/D4E0DAQG0eDHsyOSqTA/learning-public-crop_675_1200/B4EZVdqqdwHUAY-/0/1741033220778?e=2147483647&v=beta&t=FxUDo6FA8W8CiFROwqfZKL_mzQhYx9loYLfjN-LNjgA
-
