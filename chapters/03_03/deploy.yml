@@ -6,7 +6,7 @@ name: Deploy Infrastructure
 # 2. Manually via the GitHub Actions UI (workflow_dispatch)
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 # Permissions Configuration
