@@ -10,10 +10,7 @@ on:
   workflow_dispatch:
 
 # Permissions Configuration
-# These permissions are critical for OIDC authentication to work
-# GitHub Actions will generate an OIDC token with these permissions
 permissions:
-  id-token: write  # Required for OIDC token generation - allows requesting JWT tokens from GitHub
   contents: read   # Required for repository checkout - allows reading repository files
 
 jobs:
@@ -21,31 +18,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # ========================================================================
-      # Step 1: Configure AWS Credentials using OIDC
+      # Step 1: Configure AWS Credentials using Access Keys
       # ========================================================================
-      # This step uses OpenID Connect (OIDC) to authenticate with AWS
-      # Benefits of OIDC over traditional access keys:
-      # - No long-lived credentials stored in GitHub secrets
-      # - Temporary credentials that expire automatically
-      # - Better security posture and compliance
-      # - Credentials are scoped to this specific workflow execution
-      #
+      # This step uses AWS access keys stored in GitHub Secrets
+      # 
       # How it works:
-      # 1. GitHub Actions generates an OIDC token (JWT) containing workflow metadata
-      # 2. The token is sent to AWS STS (Security Token Service)
-      # 3. AWS validates the token against the OIDC provider configuration
-      # 4. If valid, AWS issues temporary credentials (access key, secret, session token)
-      # 5. These credentials are automatically set as environment variables
+      # 1. AWS access keys (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are stored
+      #    as encrypted secrets in your GitHub repository settings
+      # 2. The action retrieves these secrets and sets them as environment variables
+      # 3. The AWS CLI and SDKs automatically use these credentials
       #
       # Prerequisites:
-      # - AWS OIDC provider must be configured in your AWS account
-      # - IAM role must exist with trust policy allowing GitHub Actions
-      # - Replace ACCOUNT_ID with your AWS account ID
-      # - Replace role name if you used a different name
+      # - Create an IAM user in AWS with appropriate permissions
+      # - Generate access keys for the IAM user
+      # - Add the following secrets to your GitHub repository:
+      #   - AWS_ACCESS_KEY_ID: Your AWS access key ID
+      #   - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
+      #
+      # To add secrets:
+      # 1. Go to your GitHub repository
+      # 2. Navigate to Settings > Secrets and variables > Actions
+      # 3. Click "New repository secret"
+      # 4. Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+      #
+      # Security considerations:
+      # - Access keys are long-lived credentials that don't expire automatically
+      # - Rotate keys regularly for better security
+      # - Use least-privilege IAM policies
+      # - Consider using OIDC for better security (no long-lived credentials)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       # ========================================================================
@@ -83,7 +88,22 @@ jobs:
         run: terraform init
 
       # ========================================================================
-      # Step 5: Terraform Apply
+      # Step 5: Terraform Plan
+      # ========================================================================
+      # Generates an execution plan showing what Terraform will do
+      # This step:
+      # - Compares desired state (configuration) with actual state (AWS resources)
+      # - Shows which resources will be created, modified, or destroyed
+      # - Does NOT make any actual changes to infrastructure
+      #
+      # Review the plan output carefully to verify expected changes
+      # Look for the summary line: "Plan: X to add, Y to change, Z to destroy"
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+
+      # ========================================================================
+      # Step 6: Terraform Apply
       # ========================================================================
       # Applies the Terraform configuration to create or update AWS resources
       # This step:
@@ -103,7 +123,7 @@ jobs:
         run: terraform apply -auto-approve
 
       # ========================================================================
-      # Step 6: Output Web Server URL
+      # Step 7: Output Web Server URL
       # ========================================================================
       # Extracts and displays the web server URL from Terraform outputs
       # This makes it easy to access the deployed web server

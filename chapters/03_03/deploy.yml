@@ -6,6 +6,7 @@ name: Deploy Infrastructure
 # 2. Manually via the GitHub Actions UI (workflow_dispatch)
 on:
   push:
+    branches: [master]
   workflow_dispatch:
 
 # Permissions Configuration
@@ -44,7 +45,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       # ========================================================================
@@ -82,22 +83,7 @@ jobs:
         run: terraform init
 
       # ========================================================================
-      # Step 5: Terraform Plan
-      # ========================================================================
-      # Generates an execution plan showing what Terraform will do
-      # This step:
-      # - Compares desired state (configuration) with actual state (AWS resources)
-      # - Shows which resources will be created, modified, or destroyed
-      # - Does NOT make any actual changes to infrastructure
-      #
-      # Review the plan output carefully to verify expected changes
-      # Look for the summary line: "Plan: X to add, Y to change, Z to destroy"
-      - name: Terraform Plan
-        working-directory: terraform
-        run: terraform plan
-
-      # ========================================================================
-      # Step 6: Terraform Apply
+      # Step 5: Terraform Apply
       # ========================================================================
       # Applies the Terraform configuration to create or update AWS resources
       # This step:
@@ -117,7 +103,7 @@ jobs:
         run: terraform apply -auto-approve
 
       # ========================================================================
-      # Step 7: Output Web Server URL
+      # Step 6: Output Web Server URL
       # ========================================================================
       # Extracts and displays the web server URL from Terraform outputs
       # This makes it easy to access the deployed web server
@@ -129,4 +115,4 @@ jobs:
         working-directory: terraform
         run: |
           echo "Web Server URL: $(terraform output -raw web_server_url)"
-          echo "Access your web server at the URL above!"
+          echo "Access your web server at the URL above"
