@@ -1,5 +1,5 @@
 # ============================================================================
-# Network Infrastructure
+# Core Networking Resources
 # ============================================================================
 
 resource "aws_vpc" "main" {
@@ -9,14 +9,6 @@ resource "aws_vpc" "main" {
 
   tags = {
     Name = "vervium-pipeline-vpc"
-  }
-}
-
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "vervium-pipeline-igw"
   }
 }
 
@@ -49,8 +41,16 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "vervium-pipeline-igw"
+  }
+}
+
 # ============================================================================
-# Security Configuration
+# Network Security Resources
 # ============================================================================
 
 resource "aws_security_group" "web_server" {
@@ -80,7 +80,7 @@ resource "aws_security_group" "web_server" {
 }
 
 # ============================================================================
-# S3 Bucket for Vervium UI
+# Storage Resources
 # Private bucket — EC2 accesses it via IAM role
 # ============================================================================
 
@@ -123,7 +123,7 @@ resource "aws_s3_object" "vervium_ui_files" {
 }
 
 # ============================================================================
-# IAM Role for EC2 to access S3
+# IAM Resources
 # ============================================================================
 
 resource "aws_iam_role" "web_server" {
