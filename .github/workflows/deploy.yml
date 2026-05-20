@@ -11,46 +11,17 @@ on:
 
 # Permissions Configuration
 permissions:
+  id-token: write
   contents: read   # Required for repository checkout - allows reading repository files
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # ========================================================================
-      # Step 1: Configure AWS Credentials using Access Keys
-      # ========================================================================
-      # This step uses AWS access keys stored in GitHub Secrets
-      # 
-      # How it works:
-      # 1. AWS access keys (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are stored
-      #    as encrypted secrets in your GitHub repository settings
-      # 2. The action retrieves these secrets and sets them as environment variables
-      # 3. The AWS CLI and SDKs automatically use these credentials
-      #
-      # Prerequisites:
-      # - Create an IAM user in AWS with appropriate permissions
-      # - Generate access keys for the IAM user
-      # - Add the following secrets to your GitHub repository:
-      #   - AWS_ACCESS_KEY_ID: Your AWS access key ID
-      #   - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
-      #
-      # To add secrets:
-      # 1. Go to your GitHub repository
-      # 2. Navigate to Settings > Secrets and variables > Actions
-      # 3. Click "New repository secret"
-      # 4. Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-      #
-      # Security considerations:
-      # - Access keys are long-lived credentials that don't expire automatically
-      # - Rotate keys regularly for better security
-      # - Use least-privilege IAM policies
-      # - Consider using OIDC for better security (no long-lived credentials)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
           aws-region: us-east-1
 
       # ========================================================================
